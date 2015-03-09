@@ -1,0 +1,83 @@
+%% Basic Mapping of Infinity blend;
+%% original input spaces, which lead to inconsistent colimit.
+
+logic CASL
+
+spec PotentialInfProc =
+
+    sort State
+    ops  InitState : State
+    preds  NextState : State * State
+           __<__ : State * State    
+           isFinal : State
+
+    forall x:State 
+          . isFinal(x) <=> forall y:State . (not(x=y) => y < x)  %(final_def)%
+
+    forall x: State . not (isFinal(x)) => exists! y:State 
+                                      . NextState( x,y )  %(next_near_total)%
+    forall x, y, z : State . NextState(x,y) /\ NextState(x,z)
+                                 => z = y                 %(next_inj)%
+    forall x : State . not (NextState(x,InitState))       %(init_not_next)%
+    forall x, y, z, xx, yy : State
+      . NextState(x,y) => InitState < y                   %(Init_least)%
+      . x < y /\ NextState (x,xx) /\ NextState (y,yy)
+               =>  xx < yy                                %(less_monoton)%
+      . not ( x < x )                                     %(less_irref)%
+      .  x < y /\ y < z => x < z                          %(less_trans)%
+      . x < y \/ x = y \/ y < x                           %(less_linear)%
+      . not (isFinal(x))                                  %(no final state)%
+    
+
+end
+
+spec CompletedFinProc =
+
+    sort State 
+    ops  InitState, s2, s3, theFinalState : State
+    
+    preds NextState : State * State
+          __<__ : State * State    
+          isFinal : State
+
+    forall x:State 
+          . isFinal(x) <=> forall y:State . (not(x=y) => y < x)  %(final_def)%
+
+    forall x,y : State 
+         . NextState(x,y) <=>
+              ( (x = InitState /\ y = s2)
+              \/ (x = s2 /\ y = s3)
+              \/ (x = s3 /\ y = theFinalState))   %(trans_table)%
+
+    forall x, y, z, xx, yy : State
+      . NextState(x,y) => InitState < y                   %(Init_least2)%
+      . x < y /\ NextState (x,xx) /\ NextState (y,yy)
+               =>  xx < yy                                %(less_monoton2)%
+      . not ( x < x )                                     %(less_irref2)%
+      . x < y /\ y < z => x < z                          %(less_trans2)%
+      . x < y \/ x = y \/ y < x                           %(less_linear2)%
+
+      . x = theFinalState <=> isFinal (x)                 %(final_final)%
+
+end
+
+spec Generic =
+
+    sort GState
+    preds StateOrder : GState * GState
+          StateSuc :   GState * GState
+          isFinal : GState
+    op InitState : GState
+
+end
+
+view V1 : Generic to PotentialInfProc  =
+       GState |-> State, StateOrder |-> __<__, StateSuc |-> NextState
+
+view V2 : Generic to CompletedFinProc =
+       GState |-> State, StateOrder |-> __<__, StateSuc |-> NextState
+
+spec Colimit2 = combine V1,V2 end
+
+%%  Colimit2 is unsat (eprover, darwin), sat (Fact), sat (Pellet),
+%%
