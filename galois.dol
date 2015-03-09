@@ -1,0 +1,87 @@
+logic CASL
+
+from Basic/StructuredDatatypes get List
+
+spec Field =
+     sort Extension
+     sort Rat < Extension
+     sort Complex < Extension
+
+	  ops
+	  __ ++ __:Rat * Rat -> Rat;
+	  __ ** __:Rat * Rat -> Rat;
+	  -- __: Rat -> Rat;
+	  zero:Rat;
+	  
+
+          op times_inv __: Rat ->? Rat;
+          one:Rat;
+     
+     forall x,y,z,v:Rat;
+       a:Rat
+	    . x ++ zero =x	%f_plus_ident%
+     	    . x ++ y=y ++ x   %f_com_plus%
+	    . x ++ (y ++ z) = (x ++ y) ++ z  %f_assoc_plus%
+	    . x ++ (-- x) = zero    %f_plus_inv%
+	    . x ** y = y ** x  %f_com_times%
+	    . (x ** y) ** z=x ** (y ** z) %f_assoc_times%
+	    . (not (a = zero)) =>  a ** (times_inv a) = one %f_times_inv%
+	    . a ** one = a %f_times_ident$
+ 	    . x ** (y ++ z) = (x ** y) ++ (x ** z) %f_dist_times%
+
+
+	  ops
+	  __ +++ __:Extension * Extension -> Extension;
+	  __ *** __:Extension * Extension -> Extension;
+	  --- __: Extension -> Extension;
+	  extzero:Extension;
+	  
+
+          op exttimes_inv __: Extension ->? Extension;
+          extone:Extension;
+     
+     forall x,y,z,v:Extension;
+       a:Extension
+	    . x +++ (zero as Extension) = x	%f_plus_ident%
+     	    . x +++ y=y +++ x   %f_com_plus%
+	    . x +++ (y +++ z) = (x +++ y) +++ z  %f_assoc_plus%
+	    . x +++ (--- x) = (zero as Extension)    %f_plus_inv%
+	    . x *** y = y *** x  %f_com_times%
+	    . (x *** y) *** z=x *** (y *** z) %f_assoc_times%
+	    . (not (a = (zero as Extension))) =>  a *** (exttimes_inv a) = (one as Extension) %f_times_inv%
+	    . a *** one = a %f_times_ident$
+ 	    . x *** (y +++ z) = (x *** y) +++ (x *** z) %f_dist_times%
+
+end
+
+spec Polynomial = 
+   Field then
+   List[sort Rat] then
+   pred isroot: Complex * List[Rat]
+   op eval: Complex * List[Rat] -> Extension
+   op poly: Extension * Nat -> Extension
+   forall x:Complex, y,t:List[Rat],h:Rat, k:Extension, n: Nat
+   . eval(x,[]) = zero
+   . eval(x,h::t) = (h *** poly(x as Extension,# t)) +++ eval(x,t) 
+   . poly(k,0) = one
+   . poly(k,suc(n)) = k *** poly(k,n) 
+   . isroot(x,y) => eval(x,y) = zero  %implied
+  
+   op a:Extension -> Extension.
+   forall f: Rat;e1,e2:Complex.
+     a(f as Extension) = (f as Extension) => a(e1 as Extension) = e2 as Extension
+end
+
+
+spec Group =
+  sort G
+  op binop: G*G -> G
+  op ident:G
+  forall g:G
+  . binop(g,ident) = g
+  forall g:G. exists inv:G
+  . binop(g,inv) = ident
+  forall g,h,k:G
+  . binop(g,binop(h,k)) = binop(binop(g,h),k)
+end
+  
