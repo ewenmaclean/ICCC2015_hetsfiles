@@ -1,0 +1,42 @@
+logic CASL
+
+spec NatSuc = 
+   sort Nat
+   ops zero:Nat
+       s: Nat -> Nat
+       __ + __: Nat * Nat -> Nat
+forall x,y,z: Nat
+     . s(x) = y /\ s(x) = z => y = z
+     . s(x) = s(y) => x=y
+     . exists a: Nat . s(x) = a
+     . not (s(x) = zero)
+     . s(x) + y = s(x+y)
+     . zero + y = y
+end
+
+spec Func = 
+  sort X
+  op f: X->X
+  op finv: X->X
+  forall x:X
+     . f (finv(x)) = x
+     . finv (f(x)) = x
+end
+
+
+spec Generic =
+   sort N
+   ops func: N -> N
+end
+
+view I1: Generic to NatSuc = 
+   N |-> Nat,
+   func |-> s
+
+view I2: Generic to Func = 
+   N |-> X, 
+   func |-> f
+
+spec blend1 = combine I1,I2
+   with finv |-> pre
+
